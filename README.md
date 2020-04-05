@@ -25,7 +25,7 @@ Authors propose guidelines based in 6 strategies to generate robust training sam
 1. Predicting missing item in purchase basket.
 2. Predicting next purchase basket.
 3. Recommending visually similar artworks from favorite artists.
-4. Recommending profile items from the same user profiel.
+4. Recommending profile items from the same user profile.
 5. Recommending profile items given an artificially created user profile.
 6. Artificial profile with a single item: recommend visually similar items from the same artist.
 

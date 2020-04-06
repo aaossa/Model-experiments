@@ -40,7 +40,8 @@ First of all, make sure that every user in the test set is present in the traini
 ## Current state of implementation
 
 - [ ] Generating items embeddings with pretrained networks.
-- [ ] Data processing procedure to create triples.
+- [x] Data processing procedure to create triples.
+- [ ] Pytorch dataloaders.
 - [ ] Pytorch model architecture.
 - [ ] Adapt framework to calculate metrics using hold-out.
 

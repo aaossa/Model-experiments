@@ -1,3 +1,13 @@
+### Custom
+
+# Ignore changes in checkpoints folder
+checkpoints/
+
+# Ignore changes in UGallery data folder...
+data/Ugallery
+# ... except its README
+!data/Ugallery/README.md
+
 
 # Created by https://www.gitignore.io/api/linux,macos,python,windows,jupyternotebooks
 # Edit at https://www.gitignore.io/?templates=linux,macos,python,windows,jupyternotebooks

@@ -4,9 +4,9 @@
 checkpoints/
 
 # Ignore changes in UGallery data folder...
-data/Ugallery
+data/UGallery
 # ... except its README
-!data/Ugallery/README.md
+!data/UGallery/README.md
 
 
 # Created by https://www.gitignore.io/api/linux,macos,python,windows,jupyternotebooks

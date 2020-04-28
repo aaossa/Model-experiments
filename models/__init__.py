@@ -1,0 +1,1 @@
+from .curatornet import CuratorNet

@@ -2,6 +2,8 @@
 
 # Ignore changes in checkpoints folder
 checkpoints/
+# Ignore changes in runs folder
+runs/
 
 # Ignore changes in UGallery data folder...
 data/UGallery

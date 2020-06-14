@@ -1,8 +1,9 @@
 """Custom batch sampler"""
 import random
-from collections import Counter, defaultdict
+from collections import defaultdict
 
-from torch.utils.data.sampler import BatchSampler
+import numpy as np
+from torch.utils.data.sampler import BatchSampler, RandomSampler
 
 
 class SameProfileSizeBatchSampler(BatchSampler):
@@ -14,56 +15,88 @@ class SameProfileSizeBatchSampler(BatchSampler):
 
     Attributes:
         sampler: PyTorch sampler object to retrieve triples.
-        batch_size: Size of each batch.
+        max_batch_size: Max number of triples in each batch.
+        max_profile_items_per_batch: Max number of items in profile.
         drop_last: Decides what to do with items that do not fill a
             batch.
-        bump_rate: Probability of yielding a batch before reaching
-            batch_size.
+        n_largest_first: How many of the largest batches to return
+            first.
     """
 
-    def __init__(self, sampler, batch_size, bump_rate=0.05, drop_last=False):
-        """Inits a SameProfileSizeBatchSampler instance.
-
-        Args:
-            sampler: PyTorch sampler object to retrieve triples.
-            batch_size: Size of each batch to be yielded.
-            drop_last: Optional. Decides what to do with items that did
-                not fill a batch. Defaults to False.
-            bump_rate: Optional. Probability of yielding a batch before
-                reaching batch_size. Defaults to 0.05 (5%).
-        """
+    def __init__(self, sampler, max_batch_size, max_profile_items_per_batch,
+                 drop_last=False, n_largest_first=0):
+        # Data sources
         self.sampler = sampler
         assert hasattr(self.sampler.data_source, "profile_sizes")
-        self.batch_size = batch_size
+        # Minibatch limits
+        self.max_batch_size = max_batch_size
+        self.max_profile_items_per_batch = max_profile_items_per_batch
+        # More setup
         self.drop_last = drop_last
-        self.bump_rate = bump_rate
+        self.n_largest_first = n_largest_first
+        # Settings under the hood
+        self.__shuffle = isinstance(sampler, RandomSampler)
+        self.__minibatches = None
+        self.__samples_per_profile_size = None
+        # Prepare sampler
+        self.prepare()
+
+    def prepare(self):
+        # Group samples of the same size to avoid doing it while training
+        self.__samples_per_profile_size = defaultdict(list)
+        for idx in self.sampler:
+            p_size = self.sampler.data_source.profile_sizes[idx]
+            self.__samples_per_profile_size[p_size].append(idx)
+        # Transform each list into numpy array
+        self.__samples_per_profile_size = {
+            k: np.array(v)
+            for k, v in self.__samples_per_profile_size.items()
+        }
+        # Generate minibatches for the first time to fill attributes
+        self.generate_minibatches()
+
+    def generate_minibatches(self):
+        minibatches = list()
+        for p_size, samples in self.__samples_per_profile_size.items():
+            # Shuffle samples if necessary
+            if self.__shuffle:
+                np.random.shuffle(samples)
+            batch_size = min(
+                self.max_batch_size,
+                self.max_profile_items_per_batch // p_size,
+            )
+            # Reduce samples to chunks
+            for i in range(0, len(samples), batch_size):
+                minibatch = samples[i:i+batch_size]
+                minibatches.append((
+                    len(minibatch) * p_size,  # Items in profile
+                    len(minibatch),  # Items in pi/ni
+                    minibatch,  # Actual minibatch
+                ))
+            # Drop "irregular" batches
+            if self.drop_last:
+                minibatches.pop(-1)
+        self.__minibatches = minibatches
 
     def __iter__(self):
-        batch_queue = defaultdict(list)
-        profile_sizes = self.sampler.data_source.profile_sizes
-        for idx in self.sampler:
-            p_size = profile_sizes[idx]
-            batch_queue[p_size].append(idx)
-            if len(batch_queue[p_size]) == self.batch_size:
-                batch, batch_queue[p_size] = batch_queue[p_size][:], []
-                yield batch
-                if random.random() < self.bump_rate and not self.drop_last:
-                    possible_keys = [k for k, v in batch_queue.items() if v]
-                    if possible_keys:
-                        bumped_key = random.choice(possible_keys)
-                        batch, batch_queue[bumped_key] = batch_queue[bumped_key][:], []
-                        yield batch
-        if not self.drop_last:
-            for k in random.sample(list(batch_queue.keys()), len(batch_queue)):
-                if batch_queue[k]:
-                    yield batch_queue[k]
+        # Generate minibatches
+        self.generate_minibatches()
+        # Prepare largest items first
+        if self.n_largest_first:
+            self.__minibatches = sorted(
+                self.__minibatches,
+                key=lambda mb: (mb[0], mb[1]),
+                reverse=True,
+            )
+        largest_minibatches = self.__minibatches[:self.n_largest_first]
+        minibatches = self.__minibatches[self.n_largest_first:]
+        # Prepare and shuffle other minibatches if necessary
+        if self.__shuffle:
+            random.shuffle(minibatches)
+        # Join and yield minibatches
+        self.__minibatches = largest_minibatches + minibatches
+        for _, _, minibatch in self.__minibatches:
+            yield minibatch
 
     def __len__(self):
-        if self.drop_last:
-            return len(self.sampler) // self.batch_size
-        else:
-            counter = Counter(self.sampler.data_source.profile_sizes)
-            n_samples = 0
-            for k, v in counter.items():
-                n_samples += (v + self.batch_size - 1) // self.batch_size
-            return n_samples
+        return len(self.__minibatches)

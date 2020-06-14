@@ -10,13 +10,14 @@ class CuratorNet(nn.Module):
     Network for Visually-aware Recommendation of Art Images'.
     """
 
-    def __init__(self):
-        """Inits a new CuratorNet model module.
-        """
+    def __init__(self, embedding, input_size=2048):
         super().__init__()
 
+        # Embedding
+        self.embedding = nn.Embedding.from_pretrained(embedding, freeze=True)
+
         # Common section
-        self.selu_common1 = nn.Linear(2048, 200)
+        self.selu_common1 = nn.Linear(input_size, 200)
         self.selu_common2 = nn.Linear(200, 200)
 
         # Profile section
@@ -43,6 +44,11 @@ class CuratorNet(nn.Module):
         Returns:
             Network output (scalar) for each input.
         """
+        # Load embedding data
+        profile = self.embedding(profile)
+        pi = self.embedding(pi)
+        ni = self.embedding(ni)
+
         # Positive item
         pi = F.selu(self.selu_common1(pi))
         pi = F.selu(self.selu_common2(pi))
@@ -82,6 +88,7 @@ class CuratorNet(nn.Module):
         Returns:
             Scores for each item for the given profile.
         """
+        print("WARNING: Not updated according to latest versions of the model")
         with torch.set_grad_enabled(grad_enabled):
             # User profile
             profile = F.selu(self.selu_common1(profile))

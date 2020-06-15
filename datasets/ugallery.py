@@ -52,15 +52,17 @@ class UGalleryDataset(Dataset):
             triples["profile"] = triples["profile"].map(lambda p: p.split())
             triples = triples.applymap(map_id2index)
             triples["profile"] = triples["profiles"].map(lambda p: " ".join(p))
-        self.profile_sizes = np.fromiter(
-            map(lambda p: p.count(" ") + 1, triples["profile"]),
-            dtype=int, count=len(triples),
-        )
-        # Mapping to unique profiles
-        self.unique_profiles = triples["profile"].unique()
-        profile2index = {k: v for v, k in enumerate(self.unique_profiles)}
-        triples["profile"] = triples["profile"].map(lambda p: profile2index[p])
-        self.unique_profiles = self.unique_profiles.astype(np.string_)
+        # Mapping to unique profiles and use it to calculate profile sizes
+        unique_profiles = triples["profile"].unique()
+        profile2index = {k: v for v, k in enumerate(unique_profiles)}
+        triples["profile"] = triples["profile"].map(profile2index)
+        profile_sizes = np.fromiter(
+            map(lambda p: p.count(" "), unique_profiles),
+            dtype=int, count=len(unique_profiles),
+        ) + 1
+        profile_sizes = triples["profile"].map(dict(enumerate(profile_sizes)))
+        self.unique_profiles = unique_profiles.astype(np.string_)
+        self.profile_sizes = profile_sizes.to_numpy(copy=True)
         # Using numpy arrays for faster lookup
         self.profile = triples["profile"].to_numpy(copy=True)
         self.pi = triples["pi"].to_numpy(copy=True)
@@ -78,10 +80,9 @@ class UGalleryDataset(Dataset):
                 self.unique_profiles[prof], dtype=int, sep=" ",
             )
         else:
-            profile = self.unique_profiles[prof]
-            profile = b" ".join(profile)
-            profile = np.fromstring(profile, dtype=int, sep=" ")
-            profile = profile.reshape((len(idx), -1))
+            profile = np.fromstring(
+                b" ".join(self.unique_profiles[prof]), dtype=int, sep=" ",
+            ).reshape((len(idx), -1))
 
         return (
             profile,

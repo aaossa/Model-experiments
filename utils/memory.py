@@ -5,6 +5,9 @@ import psutil
 from humanize import naturalsize
 
 
+__GPUs = GPUtil.getGPUs()
+
+
 def memory_report():
     # CPU RAM
     current_process = psutil.Process(os.getpid())
@@ -16,15 +19,15 @@ def memory_report():
     for child in current_process.children(recursive=True):
         print(f">> Child {child.pid}: {naturalsize(child.memory_info().rss)}")
     # GPU RAM
-    GPUs = GPUtil.getGPUs()
-    if GPUs:
-        gpu = GPUs[0]
-        print(
-            f"GPU RAM free: {gpu.memoryFree:.0f} MB | "
-            f"Used: {gpu.memoryUsed:.0f} MB | "
-            f"Util.: {gpu.memoryUtil*100:.0f}% | "
-            f"Total: {gpu.memoryTotal:.0f} MB"
-        )
+    if __GPUs:
+        for gpu in __GPUs:
+            print(f"GPU {gpu.id} ({gpu.name})")
+            print(
+                f"GPU RAM free: {gpu.memoryFree:.0f} MB | "
+                f"Used: {gpu.memoryUsed:.0f} MB | "
+                f"Util.: {gpu.memoryUtil*100:.0f}% | "
+                f"Total: {gpu.memoryTotal:.0f} MB"
+            )
     else:
         print("No GPU available")
 

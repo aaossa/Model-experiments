@@ -5,7 +5,7 @@ REQUIREMENTS_TXT=${1:-requirements/dev.txt}
 # Install project requirements
 echo ">> Installing requirements.txt"
 if [ -f "${REQUIREMENTS_TXT}" ]; then
-    pip install -r "$REQUIREMENTS_TXT"
+    pip install -r "$REQUIREMENTS_TXT" --upgrade
 else
     echo ERROR: Failed to find "${REQUIREMENTS_TXT}". Please provide an existing path to a requirements file.
     exit 1

@@ -6,6 +6,8 @@ import torch
 from torch.utils.tensorboard import SummaryWriter
 from tqdm.notebook import tqdm
 
+from models.utils import save_checkpoint
+
 
 def train_with_batch_samplers(
     model, device, criterion, optimizer, scheduler, batch_samplers,

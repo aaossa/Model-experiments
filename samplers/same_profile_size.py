@@ -15,22 +15,23 @@ class SameProfileSizeBatchSampler(BatchSampler):
 
     Attributes:
         sampler: PyTorch sampler object to retrieve triples.
-        max_batch_size: Max number of triples in each batch.
-        max_profile_items_per_batch: Max number of items in profile.
+        batch_size: Max number of triples in each batch.
+        profile_items_per_batch: Max number of items in profile.
         drop_last: Decides what to do with items that do not fill a
             batch.
         n_largest_first: How many of the largest batches to return
             first.
     """
 
-    def __init__(self, sampler, max_batch_size, max_profile_items_per_batch,
+    def __init__(self, sampler, batch_size=None, profile_items_per_batch=None,
                  drop_last=False, n_largest_first=0):
         # Data sources
         self.sampler = sampler
         assert hasattr(self.sampler.data_source, "profile_sizes")
         # Minibatch limits
-        self.max_batch_size = max_batch_size
-        self.max_profile_items_per_batch = max_profile_items_per_batch
+        assert batch_size is not None or profile_items_per_batch is not None
+        self.batch_size = batch_size if batch_size else float("inf")
+        self.profile_items_per_batch = profile_items_per_batch if profile_items_per_batch else float("inf")
         # More setup
         self.drop_last = drop_last
         self.n_largest_first = n_largest_first
@@ -62,8 +63,8 @@ class SameProfileSizeBatchSampler(BatchSampler):
             if self.__shuffle:
                 np.random.shuffle(samples)
             batch_size = min(
-                self.max_batch_size,
-                self.max_profile_items_per_batch // p_size,
+                self.batch_size,
+                self.profile_items_per_batch // p_size,
             )
             # Reduce samples to chunks
             for i in range(0, len(samples), batch_size):

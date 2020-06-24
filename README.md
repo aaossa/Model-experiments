@@ -16,7 +16,7 @@ The training process is based on BPR, with truples of the form ($u$, $i_{-}$, $i
 
 ### Creating visual clusters
 
-A pretrained network is used to create embedding vectors ($R^{2048}$), and then use PCA to reduce the dimensionality of images embedding vectors to $R^{200}$. More details about this procedure can be found in the paper.
+A pretrained network is used to create embedding vectors ($R^{2048}$ or $R^{4096}$), and then use PCA to reduce the dimensionality of images embedding vectors to $R^{200}$. More details about this procedure can be found in the paper.
 
 ### Sampling triples
 
@@ -39,9 +39,14 @@ First of all, make sure that every user in the test set is present in the traini
 
 ## Current state of implementation
 
-- [ ] Generating items embeddings with pretrained networks.
+- [x] Generating items embeddings with pretrained networks.
 - [x] Data processing procedure to create triples.
-- [ ] Pytorch dataloaders.
-- [ ] Pytorch model architecture.
-- [ ] Adapt framework to calculate metrics using hold-out.
+- [x] Pytorch dataloaders.
+- [x] Pytorch model architecture.
+- [x] Adapt framework to calculate metrics using hold-out.
+
+## More about the implementation
+
+* Dataset was processed in the Social Computing and Visualization Lab at PUC Chile ([SocVis](http://socialcomputing.ing.puc.cl/), [@PUC-SocVis](https://github.com/PUC-SocVis)) cluster.
+* Models were trained in Google Colaboratory machines, using VMs with a specific GPU (**Tesla P100-PCIE-16GB**) for speed, but the results can be reproduced in any machine.
 

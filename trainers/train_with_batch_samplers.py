@@ -108,7 +108,7 @@ def train_with_batch_samplers(
                     profile = torch.tensor(data[0], device=device)
                     pi = torch.tensor(data[1], device=device)
                     ni = torch.tensor(data[2], device=device)
-                    target = torch.ones(*data[2].shape, 1, 1, device=device)
+                    target = torch.ones(pi.size(0), 1, 1, device=device)
 
                     # Restart params gradients
                     optimizer.zero_grad()

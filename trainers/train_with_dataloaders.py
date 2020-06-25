@@ -13,6 +13,7 @@ def train_with_dataloaders(
     model, device, criterion, optimizer, scheduler, dataloaders,
     max_epochs=1, max_lrs=float("inf"), train_per_valid_times=1,
     model_version=None, checkpoint_dir=None, writer_dir=None,
+    non_blocking=True,
 ):
     # Initialization
     model = model.to(device)
@@ -99,15 +100,15 @@ def train_with_dataloaders(
             running_loss = torch.tensor(0.0, dtype=torch.double, device=device)
 
             # Iterate over data
-            dataset = dataloaders[phase].sampler.data_source
+            dataset = dataloaders[phase].dataset
             loop_times = train_per_valid_times if phase == "train" else 1
             for _ in range(loop_times):
                 for i_batch, data in enumerate(dataloaders[phase]):
                     # Load data into tensors
-                    profile = data[0].to(device)
-                    pi = data[1].to(device)
-                    ni = data[2].to(device)
-                    target = torch.ones(*data[2].shape, 1, 1, device=device)
+                    profile = data[0].to(device, non_blocking=non_blocking).squeeze(dim=0)
+                    pi = data[1].to(device, non_blocking=non_blocking).squeeze(dim=0)
+                    ni = data[2].to(device, non_blocking=non_blocking).squeeze(dim=0)
+                    target = torch.ones(pi.size(0), 1, 1, device=device)
 
                     # Restart params gradients
                     optimizer.zero_grad()

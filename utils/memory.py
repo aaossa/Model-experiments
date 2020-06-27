@@ -2,6 +2,7 @@ import os
 
 import GPUtil
 import psutil
+import torch
 from humanize import naturalsize
 
 
@@ -30,6 +31,29 @@ def memory_report():
             )
     else:
         print("No GPU available")
+
+
+def max_memory_stats(device=None):
+    if device is None:
+        device = torch.device(torch.cuda.current_device())
+    if isinstance(device, torch.device):
+        print(f"Device: '{device}'")
+        print(f"Max memory allocated: {naturalsize(torch.cuda.max_memory_allocated(device))}")
+        print(f"Max memory reserved:  {naturalsize(torch.cuda.max_memory_reserved(device))}")
+    else:
+        for d in device:
+            max_memory_stats(device=d)
+            print()
+
+
+def reset_peak_memory_stats(device=None):
+    if device is None:
+        device = torch.device(torch.cuda.current_device())
+    if isinstance(device, torch.device):
+        torch.cuda.reset_peak_memory_stats()
+    else:
+        for d in device:
+            reset_peak_memory_stats(device=d)
 
 
 if __name__ == '__main__':

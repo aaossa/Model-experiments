@@ -6,9 +6,6 @@ import torch
 from humanize import naturalsize
 
 
-__GPUs = GPUtil.getGPUs()
-
-
 def memory_report():
     # CPU RAM
     current_process = psutil.Process(os.getpid())
@@ -20,8 +17,9 @@ def memory_report():
     for child in current_process.children(recursive=True):
         print(f">> Child {child.pid}: {naturalsize(child.memory_info().rss)}")
     # GPU RAM
-    if __GPUs:
-        for gpu in __GPUs:
+    GPUs = GPUtil.getGPUs()
+    if GPUs:
+        for gpu in GPUs:
             print(f"GPU {gpu.id} ({gpu.name})")
             print(
                 f"GPU RAM free: {gpu.memoryFree:.0f} MB | "

@@ -5,6 +5,30 @@ and notify collisions.
 """
 
 
+def pre_hash(triple):
+    """Prepare tuple to be hashed.
+
+    This means that each element of the tuple will be converted to
+    string. The first item (profile) should be iterable, whilst only
+    the second and third items (positive and negative) will be
+    considered as well, leaving the rest out of the tuple.
+
+    Args:
+        triple: Tuple with the profile items (iterable), positive
+            item and its negative counterpart.
+
+    Returns:
+        Same tuple but converted to string. Example:
+
+            ([1, 2], 3, 4, 5)
+
+        Becomes:
+
+            (['1', '2'], '3', '4')
+    """
+    _sorted_t0 = tuple(sorted([str(_id) for _id in triple[0]]))
+    return (_sorted_t0, str(triple[1]), str(triple[2]))
+
 class HashesContainer:
     """Manages hashes of elements to detect duplicates.
 

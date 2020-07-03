@@ -88,7 +88,6 @@ class CuratorNet(nn.Module):
         Returns:
             Scores for each item for the given profile.
         """
-        print("WARNING: Not updated according to latest versions of the model")
         with torch.set_grad_enabled(grad_enabled):
             # User profile
             profile = F.selu(self.selu_common1(profile))

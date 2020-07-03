@@ -1,1 +1,1 @@
-from .ugallery import UGalleryDataset
+from .ugallery import UGalleryDataset, UGalleryDatasetUserMode

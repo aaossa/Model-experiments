@@ -5,7 +5,7 @@ and notify collisions.
 """
 
 
-def pre_hash(triple):
+def pre_hash(triple, contains_iter=True):
     """Prepare tuple to be hashed.
 
     This means that each element of the tuple will be converted to
@@ -16,6 +16,8 @@ def pre_hash(triple):
     Args:
         triple: Tuple with the profile items (iterable), positive
             item and its negative counterpart.
+        contains_iter: Optional. If its true, sorts and transform
+            each element of the first element in a truple with str.
 
     Returns:
         Same tuple but converted to string. Example:
@@ -25,9 +27,20 @@ def pre_hash(triple):
         Becomes:
 
             (['1', '2'], '3', '4')
+
+        If contains_iter is False:
+
+            (1, 2, 3)
+
+        Becomes:
+
+            ('1', '2', '3')
     """
+    if not contains_iter:
+        return (str(triple[0]), str(triple[1]), str(triple[2]))
     _sorted_t0 = tuple(sorted([str(_id) for _id in triple[0]]))
     return (_sorted_t0, str(triple[1]), str(triple[2]))
+
 
 class HashesContainer:
     """Manages hashes of elements to detect duplicates.

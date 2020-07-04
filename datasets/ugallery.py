@@ -1,6 +1,6 @@
 """UGallery Dataset (PyTorch) object
 
-This module contains a that contains the information about the
+This module contains Dataset objects with the information about the
 UGallery dataset, to be accessible from PyTorch.
 """
 import errno
@@ -16,7 +16,8 @@ from torch.utils.data import Dataset
 
 
 class UGalleryDataset(Dataset):
-    """Represents the UGallery Dataset as a PyTorch Dataset.
+    """Represents the UGallery Dataset as a PyTorch Dataset. This 
+    mode, represents users as a profile, a set of items.
 
     Attributes:
         profile_sizes: Size of each user profile.
@@ -86,6 +87,64 @@ class UGalleryDataset(Dataset):
 
         return (
             profile,
+            self.pi[idx],
+            self.ni[idx],
+        )
+
+        # if self.transform:
+        #     sample = self.transform(sample)
+
+        # return sample
+
+class UGalleryDatasetUserMode(Dataset):
+    """Represents the UGallery Dataset as a PyTorch Dataset. User 
+    mode works with user_id instead of a profile made of items.
+
+    Attributes:
+        profile_sizes: Size of each user profile.
+        unique_profiles: Actual profile data to save space.
+        profile, pi, ni: Dataset triples (in different arrays).
+        transform: Transforms for each sample.
+    """
+
+    def __init__(self, csv_file, transform=None, id2index=None):
+        """Inits a UGallery Dataset.
+
+        Args:
+            csv_file: Path (string) to the triplets file.
+            transform: Optional. Torchvision like transforms.
+            id2index: Optional. Transformation to apply on items.
+        """
+        # Data sources
+        if not os.path.isfile(csv_file):
+            raise FileNotFoundError(
+                errno.ENOENT, os.strerror(errno.ENOENT), csv_file,
+            )
+        self.__source_file = csv_file
+        # Load triples from dataframe
+        triples = pd.read_csv(self.__source_file)
+        # Process profile elements
+        if id2index:
+            # Note: Assumes id is str and index is int
+            def map_id2index(element):
+                if type(element) is list:
+                    return [id2index[e] for e in element]
+                else:
+                    return id2index[str(element)]
+            triples[["pi", "ni"]] = triples[["pi", "ni"]].applymap(map_id2index)
+        # Keep important attributes
+        self.ui = triples["ui"].to_numpy(copy=True)
+        self.pi = triples["pi"].to_numpy(copy=True)
+        self.ni = triples["ni"].to_numpy(copy=True)
+        # Common setup
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.ui)
+
+    def __getitem__(self, idx):
+        return (
+            self.ui[idx],
             self.pi[idx],
             self.ni[idx],
         )

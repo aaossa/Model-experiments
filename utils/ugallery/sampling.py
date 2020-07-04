@@ -44,7 +44,7 @@ class StrategyHandler:
             if i not in profile_set:
                 return i
 
-    def strategy_1(self, purchases_df, samples_per_user, hashes_container):
+    def strategy_1(self, purchases_df, samples_per_user, hashes_container, user_as_items=True):
         # Initialization
         samples = []
         for ui, group in tqdm(purchases_df.groupby("customer_id"), desc="Strategy 1"):
@@ -69,11 +69,14 @@ class StrategyHandler:
                 if spi <= sni:
                     continue
                 # If conditions are met, hash and enroll triple
-                triple = (profile, pi, ni)
-                if not hashes_container.enroll(pre_hash(triple)):
+                if user_as_items:
+                    triple = (profile, pi, ni)
+                else:
+                    triple = (ui, pi, ni)
+                if not hashes_container.enroll(pre_hash(triple, contains_iter=user_as_items)):
                     continue
                 # If not seen, store sample
-                samples.append((*triple, ui))
+                samples.append((profile, pi, ni, ui))
                 n -= 1
         return samples
 
@@ -98,7 +101,7 @@ class StrategyHandler:
                 n -= 1
         return samples
 
-    def strategy_3(self, purchases_df, n_samples_per_user, hashes_container):
+    def strategy_3(self, purchases_df, n_samples_per_user, hashes_container, user_as_items=True):
         # Initialization
         samples = []
         for ui, group in tqdm(purchases_df.groupby("customer_id"), desc="Strategy 3"):
@@ -125,11 +128,14 @@ class StrategyHandler:
                 if spi < sni + user_margin:
                     continue
                 # If conditions are met, hash and enroll triple
-                triple = (profile, pi, ni)
-                if not hashes_container.enroll(pre_hash(triple)):
+                if user_as_items:
+                    triple = (profile, pi, ni)
+                else:
+                    triple = (ui, pi, ni)
+                if not hashes_container.enroll(pre_hash(triple, contains_iter=user_as_items)):
                     continue
                 # If not seen, store sample
-                samples.append((*triple, ui))
+                samples.append((profile, pi, ni, ui))
                 n -= 1
         return samples
 

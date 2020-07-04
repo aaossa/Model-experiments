@@ -49,7 +49,7 @@ class StrategyHandler:
         samples = []
         for ui, group in tqdm(purchases_df.groupby("customer_id"), desc="Strategy 1"):
             # Get profile artworks
-            profile = np.concatenate(group["artwork_idx"].values)
+            profile = np.concatenate(group["artwork_id"].values)
             profile_set = set(profile)
             n = samples_per_user
             while n > 0:
@@ -105,7 +105,7 @@ class StrategyHandler:
         # Initialization
         samples = []
         for ui, group in tqdm(purchases_df.groupby("customer_id"), desc="Strategy 3"):
-            profile = np.concatenate(group["artwork_idx"].values)
+            profile = np.concatenate(group["artwork_id"].values)
             profile_set = set(profile)
             artists_list = self.artist_by_idx[profile]
             clusters_list = self.cluster_by_idx[profile]

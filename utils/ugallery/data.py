@@ -85,13 +85,28 @@ def mark_evaluation_rows(purchases_df):
     return purchases_df
 
 def get_holdout(purchases_df):
-    # Pick purchases used for evaluation
-    holdout = purchases_df[purchases_df["evaluation"]]
-    # Sort transactions by timestamp
-    holdout = holdout.sort_values("timestamp")
-    # Reset index according to new order
+    # Create evaluation dataframe
+    holdout = []
+    for customer_id, group in purchases_df.groupby("customer_id"):
+        # Check if there's a profile for training
+        size = len(group)
+        profile = group.head(size - 1)["artwork_id"].values
+        profile = [item for p in profile for item in p]
+        if not profile:
+            continue
+        # Keep last purchase for evaluation
+        timestamp = group.tail(1)["timestamp"].values[0]
+        predict = group.tail(1)["artwork_id"].values[0]
+        holdout.append([timestamp, profile, predict, customer_id])
+    # Store holdout in a pandas dataframe
+    holdout = pd.DataFrame(
+        holdout,
+        columns=["timestamp", "profile", "predict", "user_id"],
+    )
+    holdout = holdout.sort_values(by=["timestamp"])
     holdout = holdout.reset_index(drop=True)
-    
+    holdout
+
     # Pick purchases not used for evaluation
     new_dataset = purchases_df[~purchases_df["evaluation"]]
     # Sort transactions by timestamp
@@ -101,16 +116,15 @@ def get_holdout(purchases_df):
     
     return holdout, new_dataset
 
+
 def map_ids_to_indexes(dataframe, id2index):
     # Apply mapping
     if isinstance(dataframe["artwork_id"].values[0], list):
-        dataframe["artwork_idx"] = dataframe["artwork_id"].apply(
+        dataframe["artwork_id"] = dataframe["artwork_id"].apply(
             lambda artwork_ids: [id2index[_id] for _id in artwork_ids],
         )
     elif isinstance(dataframe["artwork_id"].values[0], str):
-        dataframe["artwork_idx"] = dataframe["artwork_id"].apply(
+        dataframe["artwork_id"] = dataframe["artwork_id"].apply(
             lambda _id: id2index[_id],
         )
-    # Remove id column
-    dataframe = dataframe.drop(["artwork_id"], axis=1)
     return dataframe

@@ -71,6 +71,41 @@ class VBPR(nn.Module):
 
         return x_uij.unsqueeze(-1)
 
+    def recommend(self, user, items=None, grad_enabled=False):
+        """Generate recommendatiosn for a given usr.
+
+        Feed forward a user id and predict scores for each given
+        item.
+
+        Args:
+            user: User index in embedding, as a Tensor.
+            items: Optional. Items available for recommendation
+                indexes, as a Tensor. Default to score all items.
+            grad_enabled: Optional. If True, gradient will be enable.
+                Defaults to False.
+
+        Returns:
+            Scores for each item for the given user.
+        """
+        with torch.set_grad_enabled(grad_enabled):
+            # User
+            u_latent_factors = self.gamma_users(user)  # Latent factors of user u
+            u_visual_factors = self.theta_users(user)  # Visual factors of user u
+            # Items
+            i_bias = self.beta_items(items)  # Items bias
+            i_latent_factors = self.gamma_items(items)  # Items visual factors
+            i_features = self.features(items)  # Items visual features
+
+            # x_ui
+            x_ui = (
+                i_bias
+                + (u_latent_factors * i_latent_factors).sum(dim=1).unsqueeze(-1)
+                + (u_visual_factors * i_features.mm(self.embedding.weight)).sum(dim=1).unsqueeze(-1)
+                + i_features.mm(self.visual_bias.weight)
+            )
+
+            return x_ui
+
     def reset_parameters(self):
         """Resets network weights.
 

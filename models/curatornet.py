@@ -73,7 +73,7 @@ class CuratorNet(nn.Module):
 
         return x_ui - x_uj
 
-    def recommend(self, profile, items, grad_enabled=False):
+    def recommend(self, profile, items=None, grad_enabled=False):
         """Generate recommendatiosn for a given profile.
 
         Feed forward a given profile and predict scores for each
@@ -89,6 +89,13 @@ class CuratorNet(nn.Module):
             Scores for each item for the given profile.
         """
         with torch.set_grad_enabled(grad_enabled):
+            # Load embedding data
+            profile = self.embedding(profile)
+            if items is None:
+                items = self.embedding.weight.unsqueeze(0)
+            else:
+                items = self.embedding(items)
+
             # User profile
             profile = F.selu(self.selu_common1(profile))
             profile = F.selu(self.selu_common2(profile))

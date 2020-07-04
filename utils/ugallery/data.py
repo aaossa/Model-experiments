@@ -116,7 +116,6 @@ def get_holdout(purchases_df):
     
     return holdout, new_dataset
 
-
 def map_ids_to_indexes(dataframe, id2index):
     # Apply mapping
     if isinstance(dataframe["artwork_id"].values[0], list):
@@ -128,3 +127,19 @@ def map_ids_to_indexes(dataframe, id2index):
             lambda _id: id2index[_id],
         )
     return dataframe
+
+def get_evaluation_dataframe(evaluation_path):
+    # Load evaluation DataFrame from CSV
+    evaluation_df = pd.read_csv(evaluation_path)
+    string_to_list = lambda s: list(map(int, s.strip("[]").split(", ")))
+    # Transform lists from str to int
+    evaluation_df["shopping_cart"] = evaluation_df["shopping_cart"].apply(
+        lambda s: string_to_list(s) if isinstance(s, str) else s,
+    )
+    evaluation_df["profile"] = evaluation_df["profile"].apply(
+        lambda s: string_to_list(s) if isinstance(s, str) else s,
+    )
+    evaluation_df["predict"] = evaluation_df["predict"].apply(
+        lambda s: string_to_list(s) if isinstance(s, str) else s,
+    )
+    return evaluation_df

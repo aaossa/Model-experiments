@@ -32,12 +32,18 @@ def memory_report():
 
 
 def max_memory_stats(device=None):
+    if not torch.cuda.is_available():
+        print("No GPU available (unable to retrieve stats)")
+        return
     if device is None:
         device = torch.device(torch.cuda.current_device())
     if isinstance(device, torch.device):
-        print(f"Device: '{device}'")
-        print(f"Max memory allocated: {naturalsize(torch.cuda.max_memory_allocated(device))}")
-        print(f"Max memory reserved:  {naturalsize(torch.cuda.max_memory_reserved(device))}")
+        print(f"Device: '{device}' (type: '{device.type}')")
+        if device.type == "cpu":
+            print("No GPU device (unable to retrieve stats)")
+        else:
+            print(f"Max memory allocated: {naturalsize(torch.cuda.max_memory_allocated(device))}")
+            print(f"Max memory reserved:  {naturalsize(torch.cuda.max_memory_reserved(device))}")
     else:
         for d in device:
             max_memory_stats(device=d)
@@ -45,8 +51,14 @@ def max_memory_stats(device=None):
 
 
 def reset_peak_memory_stats(device=None):
+    if not torch.cuda.is_available():
+        print("No GPU available (unable to reset stats)")
+        return
     if device is None:
         device = torch.device(torch.cuda.current_device())
+    if device.type == "cpu":
+        print("No GPU device (unable to reset stats)")
+        return
     if isinstance(device, torch.device):
         torch.cuda.reset_peak_memory_stats()
     else:
@@ -56,3 +68,7 @@ def reset_peak_memory_stats(device=None):
 
 if __name__ == '__main__':
     memory_report()
+    print()
+    max_memory_stats()
+    print()
+    reset_peak_memory_stats()

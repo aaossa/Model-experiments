@@ -1,7 +1,7 @@
 import random
 
 import numpy as np
-from tqdm.autonotebook import tqdm
+from tqdm.auto import tqdm
 
 from .hashing import pre_hash
 

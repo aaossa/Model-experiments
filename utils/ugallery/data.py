@@ -4,7 +4,7 @@ import pandas as pd
 
 
 def get_transactions_dataframes(inventory_path, purchases_path, display_stats=False):
-    date_to_timestamp = lambda t: int(datetime.fromisoformat(t[:19]).timestamp())
+    date_to_timestamp = lambda t: int(datetime.strptime(t[:19], "%Y-%m-%d %H:%M:%S").timestamp())
     # Load additions DataFrame from CSV
     inventory_df = pd.read_csv(
         inventory_path,

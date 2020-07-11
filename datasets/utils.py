@@ -31,4 +31,4 @@ class PreprocessingDataset(Dataset):
         if self.transform:
             img = self.transform(img)
 
-        return {"image": img, "id": img_fn}
+        return {"image": img, "id": img_fn, "idx": idx}

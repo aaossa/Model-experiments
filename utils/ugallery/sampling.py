@@ -92,6 +92,9 @@ class StrategyHandler:
                     ni = self.__sample_artwork_index(pi)
                     if ni != pi:
                         break
+                # Compare visual similarity
+                if self.vissimhandler.same(pi, ni):
+                    continue
                 # If conditions are met, hash and enroll triple
                 triple = (profile, pi, ni)
                 if not hashes_container.enroll(pre_hash(triple)):
@@ -117,6 +120,9 @@ class StrategyHandler:
                 ni = self.__sample_artwork_index_smart(artists_list, clusters_list, profile_set)
                 # Skip if sample items are the same
                 if pi == ni:
+                    continue
+                # Compare visual similarity
+                if self.vissimhandler.same(pi, ni):
                     continue
                 # Get score from hybrid scorer and sort accordingly
                 spi = self.hybrid_scorer.get_score(ui, profile, pi)
@@ -158,6 +164,9 @@ class StrategyHandler:
                         break
                 # Skip if sample items are the same
                 if pi == ni:
+                    continue
+                # Compare visual similarity
+                if self.vissimhandler.same(pi, ni):
                     continue
                 # Get score from hybrid scorer and sort accordingly
                 spi = self.hybrid_scorer.simfunc(profile_item, pi)

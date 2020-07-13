@@ -9,13 +9,16 @@ from torch.utils.data import Dataset
 
 class PreprocessingDataset(Dataset):
 
-    def __init__(self, images_dir, transform=None):
+    def __init__(self, images_dir, extensions=None, transform=None):
         self.images_dir = images_dir
         self.transform = transform
-        # List images in folder by pattern
-        pattern = os.path.join(self.images_dir, "*.jpg")
-        # Use glob over iglob to sort and calculate length
-        self.images_paths = sorted(glob(pattern))
+        extensions = ["*.jpg"] if extensions is None else extensions
+        self.images_paths = []
+        for ext in sorted(extensions):
+            # List images in folder by pattern
+            pattern = os.path.join(self.images_dir, ext)
+            # Use glob over iglob to sort and calculate length
+            self.images_paths.extend(sorted(glob(pattern)))
 
     def __len__(self):
         return len(self.images_paths)

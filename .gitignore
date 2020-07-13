@@ -5,9 +5,11 @@ checkpoints/
 # Ignore changes in runs folder
 runs/
 
-# Ignore changes in UGallery data folder...
-data/UGallery
-# ... except its README
+# Ignore changes in datasets data folder...
+data/Pinterest/*
+data/UGallery/*
+# ... except their README
+!data/Pinterest/README.md
 !data/UGallery/README.md
 
 

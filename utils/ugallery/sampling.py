@@ -8,13 +8,14 @@ from .hashing import pre_hash
 
 class StrategyHandler:
 
-    def __init__(self, vissimhandler, hybrid_scorer, clustId2artIndexes, cluster_by_idx, artistId2artworkIndexes, artist_by_idx, threshold=0.7, confidence_margin=0.18):
+    def __init__(self, vissimhandler, hybrid_scorer, clustId2artIndexes, cluster_by_idx, artistId2artworkIndexes, artist_by_idx, user_as_items, threshold=0.7, confidence_margin=0.18):
         self.vissimhandler = vissimhandler
         self.hybrid_scorer = hybrid_scorer
         self.clustId2artIndexes = clustId2artIndexes
         self.cluster_by_idx = cluster_by_idx
         self.artistId2artworkIndexes = artistId2artworkIndexes
         self.artist_by_idx = artist_by_idx
+        self.user_as_items = user_as_items
         self.threshold = threshold
         self.confidence_margin = confidence_margin
 
@@ -44,7 +45,7 @@ class StrategyHandler:
             if i not in profile_set:
                 return i
 
-    def strategy_1(self, purchases_df, samples_per_user, hashes_container, user_as_items=True):
+    def strategy_1(self, purchases_df, samples_per_user, hashes_container):
         # Initialization
         samples = []
         for ui, group in tqdm(purchases_df.groupby("customer_id"), desc="Strategy 1"):
@@ -69,11 +70,11 @@ class StrategyHandler:
                 if spi <= sni:
                     continue
                 # If conditions are met, hash and enroll triple
-                if user_as_items:
+                if self.user_as_items:
                     triple = (profile, pi, ni)
                 else:
                     triple = (ui, pi, ni)
-                if not hashes_container.enroll(pre_hash(triple, contains_iter=user_as_items)):
+                if not hashes_container.enroll(pre_hash(triple, contains_iter=self.user_as_items)):
                     continue
                 # If not seen, store sample
                 samples.append((profile, pi, ni, ui))
@@ -83,6 +84,8 @@ class StrategyHandler:
     def strategy_2(self, embedding, samples_per_item, hashes_container):
         # Initialization
         samples = []
+        if not self.user_as_items:
+            assert samples_per_item == 0, "Trying to use fake strategy when real users are required"
         for pi, _id in enumerate(tqdm(embedding[:, 0], desc="Strategy 2")):
             profile = (pi,)
             n = samples_per_item
@@ -104,7 +107,7 @@ class StrategyHandler:
                 n -= 1
         return samples
 
-    def strategy_3(self, purchases_df, n_samples_per_user, hashes_container, user_as_items=True):
+    def strategy_3(self, purchases_df, n_samples_per_user, hashes_container):
         # Initialization
         samples = []
         for ui, group in tqdm(purchases_df.groupby("customer_id"), desc="Strategy 3"):
@@ -134,11 +137,11 @@ class StrategyHandler:
                 if spi < sni + user_margin:
                     continue
                 # If conditions are met, hash and enroll triple
-                if user_as_items:
+                if self.user_as_items:
                     triple = (profile, pi, ni)
                 else:
                     triple = (ui, pi, ni)
-                if not hashes_container.enroll(pre_hash(triple, contains_iter=user_as_items)):
+                if not hashes_container.enroll(pre_hash(triple, contains_iter=self.user_as_items)):
                     continue
                 # If not seen, store sample
                 samples.append((profile, pi, ni, ui))
@@ -148,6 +151,8 @@ class StrategyHandler:
     def strategy_4(self, embedding, samples_per_item, hashes_container):
         # Initialization
         samples = []
+        if not self.user_as_items:
+            assert samples_per_item == 0, "Trying to use fake strategy when real users are required"
         for profile_item, _ in enumerate(tqdm(embedding[:, 0], desc="Strategy 4")):
             profile = (profile_item,)
             n = samples_per_item

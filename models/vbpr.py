@@ -92,9 +92,14 @@ class VBPR(nn.Module):
             u_latent_factors = self.gamma_users(user)  # Latent factors of user u
             u_visual_factors = self.theta_users(user)  # Visual factors of user u
             # Items
-            i_bias = self.beta_items(items)  # Items bias
-            i_latent_factors = self.gamma_items(items)  # Items visual factors
-            i_features = self.features(items)  # Items visual features
+            if items is None:
+                i_bias = self.beta_items.weight  # Items bias
+                i_latent_factors = self.gamma_items.weight  # Items visual factors
+                i_features = self.features.weight  # Items visual features
+            else:
+                i_bias = self.beta_items(items)  # Items bias
+                i_latent_factors = self.gamma_items(items)  # Items visual factors
+                i_features = self.features(items)  # Items visual features
 
             # x_ui
             x_ui = (

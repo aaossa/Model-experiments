@@ -69,3 +69,17 @@ def get_holdout(interactions_df):
     new_dataset = new_dataset.reset_index(drop=True)
 
     return holdout, new_dataset
+
+
+def get_evaluation_dataframe(evaluation_path):
+    # Load evaluation DataFrame from CSV
+    evaluation_df = pd.read_csv(evaluation_path)
+    string_to_list = lambda s: list(map(int, s.strip("[]").split(", ")))
+    # Transform lists from str to int
+    evaluation_df["profile"] = evaluation_df["profile"].apply(
+        lambda s: string_to_list(s) if isinstance(s, str) else s,
+    )
+    evaluation_df["predict"] = evaluation_df["predict"].apply(
+        lambda s: string_to_list(s) if isinstance(s, str) else s,
+    )
+    return evaluation_df

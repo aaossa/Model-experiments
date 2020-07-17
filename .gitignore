@@ -8,9 +8,11 @@ runs/
 # Ignore changes in datasets data folder...
 data/Pinterest/*
 data/UGallery/*
+data/Wikimedia/*
 # ... except their README
 !data/Pinterest/README.md
 !data/UGallery/README.md
+!data/Wikimedia/README.md
 
 
 # Created by https://www.gitignore.io/api/linux,macos,python,windows,jupyternotebooks

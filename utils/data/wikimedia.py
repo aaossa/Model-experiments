@@ -29,8 +29,7 @@ def mark_evaluation_rows(interactions_df, threshold=1):
         return evaluation_series
 
     # Mark evaluation rows
-    interactions_df["evaluation"] = interactions_df.groupby(
-        "user_id")["score"].apply(_mark_evaluation_rows)
+    interactions_df["evaluation"] = interactions_df.groupby("user_id")["score"].apply(_mark_evaluation_rows)
     # Sort transactions by timestamp
     interactions_df = interactions_df.sort_values("timestamp")
     # Reset index according to new order

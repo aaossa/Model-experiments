@@ -14,7 +14,7 @@ def get_interactions_dataframe(interactions_path, display_stats=False):
 
     if display_stats:
         for col in interactions_df.columns:
-            print(f"Inventory - {col}: {inventory_df[col].nunique()}")
+            print(f"Interactions - {col}: {interactions_df[col].nunique()}")
 
     return interactions_df
 
@@ -24,13 +24,12 @@ def mark_evaluation_rows(interactions_df, threshold=1):
         # Only the last item is used for evaluation, unless
         # its the only one (then is used for training)
         evaluation_series = pd.Series(False, index=n_interactions_series.index)
-        if len(n_interactions_series) > 1:
-            evaluation_series.iloc[-1] = True
+        if len(n_interactions_series) > threshold:
+            evaluation_series.iloc[-threshold:] = True
         return evaluation_series
 
     # Mark evaluation rows
-    interactions_df["evaluation"] = interactions_df.groupby(
-        "user_id")["score"].apply(_mark_evaluation_rows)
+    interactions_df["evaluation"] = interactions_df.groupby("user_id")["score"].apply(_mark_evaluation_rows)
     # Sort transactions by timestamp
     interactions_df = interactions_df.sort_values("timestamp")
     # Reset index according to new order

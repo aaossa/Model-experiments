@@ -14,7 +14,7 @@ def get_interactions_dataframe(interactions_path, display_stats=False):
 
     if display_stats:
         for col in interactions_df.columns:
-            print(f"Inventory - {col}: {inventory_df[col].nunique()}")
+            print(f"Interactions - {col}: {interactions_df[col].nunique()}")
 
     return interactions_df
 

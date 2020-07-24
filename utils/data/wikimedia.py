@@ -47,7 +47,7 @@ def get_holdout(interactions_df):
         profile = profile.flatten().tolist()
         if not profile:
             continue
-        # Keep last purchase for evaluation
+        # Keep last interaction for evaluation
         timestamp = group.tail(1)["timestamp"].values[0]
         predict = group.tail(1)["item_id"].values[0]
         holdout.append([timestamp, profile, predict, user_id])
@@ -60,7 +60,7 @@ def get_holdout(interactions_df):
     holdout = holdout.reset_index(drop=True)
     holdout
 
-    # Pick purchases not used for evaluation
+    # Pick interactions not used for evaluation
     new_dataset = interactions_df[~interactions_df["evaluation"]]
     # Sort transactions by timestamp
     new_dataset = new_dataset.sort_values("timestamp")

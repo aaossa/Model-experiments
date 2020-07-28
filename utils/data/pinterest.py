@@ -5,12 +5,12 @@ def get_interactions_dataframe(interactions_path, display_stats=False):
     # Load interactions from CSV
     interactions_df = pd.read_csv(
         interactions_path,
-        dtype={"item_id": str},
     )
-    # Sort interactions by timestamp
-    interactions_df = interactions_df.sort_values("timestamp")
-    # Reset index according to new order
-    interactions_df = interactions_df.reset_index(drop=True)
+    # Rename columns
+    interactions_df = interactions_df.rename(columns={
+        "board_id": "user_id",
+        "im_name": "item_id",
+    })
 
     if display_stats:
         for col in interactions_df.columns:
@@ -29,11 +29,7 @@ def mark_evaluation_rows(interactions_df, threshold=1):
         return evaluation_series
 
     # Mark evaluation rows
-    interactions_df["evaluation"] = interactions_df.groupby("user_id")["score"].apply(_mark_evaluation_rows)
-    # Sort transactions by timestamp
-    interactions_df = interactions_df.sort_values("timestamp")
-    # Reset index according to new order
-    interactions_df = interactions_df.reset_index(drop=True)
+    interactions_df["evaluation"] = interactions_df.groupby("user_id")["item_id"].apply(_mark_evaluation_rows)
     return interactions_df
 
 
@@ -41,29 +37,28 @@ def get_holdout(interactions_df):
     # Create evaluation dataframe
     holdout = []
     for user_id, group in interactions_df.groupby("user_id"):
-        # Check if there's a profile for training
-        size = len(group)
-        profile = group.head(size - 1)["item_id"].values
-        profile = profile.flatten().tolist()
-        if not profile:
+        profile_rows = group[~group["evaluation"]]
+        predict_rows = group[group["evaluation"]]
+        if predict_rows.empty:
             continue
-        # Keep last interaction for evaluation
-        timestamp = group.tail(1)["timestamp"].values[0]
-        predict = group.tail(1)["item_id"].values[0]
-        holdout.append([timestamp, profile, predict, user_id])
+        # Extract items
+        profile = profile_rows["item_id"].values.tolist()
+        predict = predict_rows["item_id"].values.tolist()
+        index = predict_rows.tail(1)["index"].values[0]
+        # Keep last interactions for evaluation
+        holdout.append([index, profile, predict, user_id])
     # Store holdout in a pandas dataframe
     holdout = pd.DataFrame(
         holdout,
-        columns=["timestamp", "profile", "predict", "user_id"],
+        columns=["index", "profile", "predict", "user_id"],
     )
-    holdout = holdout.sort_values(by=["timestamp"])
+    holdout = holdout.sort_values(by=["index"])
     holdout = holdout.reset_index(drop=True)
-    holdout
 
     # Pick interactions not used for evaluation
     new_dataset = interactions_df[~interactions_df["evaluation"]]
     # Sort transactions by timestamp
-    new_dataset = new_dataset.sort_values("timestamp")
+    new_dataset = new_dataset.sort_values("index")
     # Reset index according to new order
     new_dataset = new_dataset.reset_index(drop=True)
 

@@ -35,8 +35,45 @@ def mark_evaluation_rows(interactions_df, threshold=1):
 
 def get_holdout(interactions_df):
     # Create evaluation dataframe
-    holdout = interactions_df[interactions_df["evaluation"]]
+    holdout = []
+    for user_id, group in interactions_df.groupby("user_id"):
+        profile_rows = group[~group["evaluation"]]
+        predict_rows = group[group["evaluation"]]
+        if predict_rows.empty:
+            continue
+        # Extract items
+        profile = profile_rows["item_id"].values.tolist()
+        predict = predict_rows["item_id"].values.tolist()
+        index = predict_rows.tail(1)["index"].values[0]
+        # Keep last interactions for evaluation
+        holdout.append([index, profile, predict, user_id])
+    # Store holdout in a pandas dataframe
+    holdout = pd.DataFrame(
+        holdout,
+        columns=["index", "profile", "predict", "user_id"],
+    )
+    holdout = holdout.sort_values(by=["index"])
+    holdout = holdout.reset_index(drop=True)
+
     # Pick interactions not used for evaluation
     new_dataset = interactions_df[~interactions_df["evaluation"]]
+    # Sort transactions by timestamp
+    new_dataset = new_dataset.sort_values("index")
+    # Reset index according to new order
+    new_dataset = new_dataset.reset_index(drop=True)
 
     return holdout, new_dataset
+
+
+def get_evaluation_dataframe(evaluation_path):
+    # Load evaluation DataFrame from CSV
+    evaluation_df = pd.read_csv(evaluation_path)
+    string_to_list = lambda s: list(map(int, s.strip("[]").split(", ")))
+    # Transform lists from str to int
+    evaluation_df["profile"] = evaluation_df["profile"].apply(
+        lambda s: string_to_list(s) if isinstance(s, str) else s,
+    )
+    evaluation_df["predict"] = evaluation_df["predict"].apply(
+        lambda s: string_to_list(s) if isinstance(s, str) else s,
+    )
+    return evaluation_df

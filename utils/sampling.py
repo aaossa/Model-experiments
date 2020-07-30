@@ -8,7 +8,11 @@ from .hashing import pre_hash
 
 class StrategyHandler:
 
-    def __init__(self, vissimhandler, hybrid_scorer, clustId2artIndexes, cluster_by_idx, artistId2artworkIndexes, artist_by_idx, user_as_items, threshold=0.7, confidence_margin=0.18):
+    def __init__(self, vissimhandler, hybrid_scorer, clustId2artIndexes,
+                 cluster_by_idx, artistId2artworkIndexes, artist_by_idx,
+                 user_as_items, threshold=0.7, confidence_margin=0.18,
+                 max_profile_size=None
+                 ):
         self.vissimhandler = vissimhandler
         self.hybrid_scorer = hybrid_scorer
         self.clustId2artIndexes = clustId2artIndexes
@@ -18,6 +22,7 @@ class StrategyHandler:
         self.user_as_items = user_as_items
         self.threshold = threshold
         self.confidence_margin = confidence_margin
+        self.max_profile_size = max_profile_size
 
     def __sample_artwork_index(self, idx, n_clusters=100):
         if random.random() <= self.threshold:
@@ -50,15 +55,22 @@ class StrategyHandler:
         samples = []
         for ui, group in tqdm(purchases_df.groupby("user_id"), desc="Strategy 1"):
             # Get profile artworks
-            profile = np.hstack(group["item_id"].values).tolist()
-            profile_set = set(profile)
+            full_profile = np.hstack(group["item_id"].values).tolist()
+            full_profile_set = set(full_profile)
             n = samples_per_user
             while n > 0:
                 # Sample positive and negative items
-                pi = random.choice(profile)
+                pi_index = random.randrange(len(full_profile))
+                pi = full_profile[pi_index]
+                # Get profile
+                if self.max_profile_size:
+                    # "pi_index + 1" to include pi in profile
+                    profile = full_profile[max(0, pi_index - self.max_profile_size + 1):pi_index + 1]
+                else:
+                    profile = list(full_profile)
                 while True:
                     ni = self.__sample_artwork_index(pi)
-                    if ni not in profile_set:
+                    if ni not in full_profile_set:
                         break
                 # Compare visual similarity
                 if self.vissimhandler.same(pi, ni):
@@ -111,16 +123,21 @@ class StrategyHandler:
         # Initialization
         samples = []
         for ui, group in tqdm(purchases_df.groupby("user_id"), desc="Strategy 3"):
-            profile = np.hstack(group["item_id"].values).tolist()
-            profile_set = set(profile)
-            artists_list = self.artist_by_idx[profile]
-            clusters_list = self.cluster_by_idx[profile]
-            user_margin = self.confidence_margin / len(profile)
+            full_profile = np.hstack(group["item_id"].values).tolist()
+            artists_list = self.artist_by_idx[full_profile]
+            clusters_list = self.cluster_by_idx[full_profile]
+            user_margin = self.confidence_margin / len(full_profile)
             n = n_samples_per_user
             while n > 0:
+                # Get profile
+                if self.max_profile_size:
+                    # Use the latest items only
+                    profile = full_profile[-self.max_profile_size:]
+                else:
+                    profile = list(full_profile)
                 # Sample positive and negative items
-                pi = self.__sample_artwork_index_smart(artists_list, clusters_list, profile_set)
-                ni = self.__sample_artwork_index_smart(artists_list, clusters_list, profile_set)
+                pi = self.__sample_artwork_index_smart(artists_list, clusters_list, set(profile))
+                ni = self.__sample_artwork_index_smart(artists_list, clusters_list, set(profile))
                 # Skip if sample items are the same
                 if pi == ni:
                     continue

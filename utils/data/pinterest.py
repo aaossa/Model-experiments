@@ -20,16 +20,20 @@ def get_interactions_dataframe(interactions_path, display_stats=False):
 
 
 def mark_evaluation_rows(interactions_df, threshold=1):
-    def _mark_evaluation_rows(n_interactions_series):
-        # Only the last item is used for evaluation, unless
-        # its the only one (then is used for training)
-        evaluation_series = pd.Series(False, index=n_interactions_series.index)
-        if len(n_interactions_series) > threshold:
+    def _mark_evaluation_rows(group):
+        # Only the last 'threshold' items are used for evaluation,
+        # unless less items are available (then they're used for training)
+        evaluation_series = pd.Series(False, index=group.index)
+        if len(group) > threshold:
             evaluation_series.iloc[-threshold:] = True
         return evaluation_series
 
     # Mark evaluation rows
-    interactions_df["evaluation"] = interactions_df.groupby("user_id")["item_id"].apply(_mark_evaluation_rows)
+    interactions_df["evaluation"] = interactions_df.groupby(["user_id"])["user_id"].apply(_mark_evaluation_rows)
+    # Sort transactions by old index
+    interactions_df = interactions_df.sort_values("index")
+    # Reset index according to previous order
+    interactions_df = interactions_df.reset_index(drop=True)
     return interactions_df
 
 
@@ -37,16 +41,19 @@ def get_holdout(interactions_df):
     # Create evaluation dataframe
     holdout = []
     for user_id, group in interactions_df.groupby("user_id"):
+        # Check if there's a profile for training
         profile_rows = group[~group["evaluation"]]
         predict_rows = group[group["evaluation"]]
-        if predict_rows.empty:
-            continue
         # Extract items
         profile = profile_rows["item_id"].values.tolist()
-        predict = predict_rows["item_id"].values.tolist()
-        index = predict_rows.tail(1)["index"].values[0]
+        if type(profile[0]) is list:
+            profile = [item for p in profile for item in p]
         # Keep last interactions for evaluation
-        holdout.append([index, profile, predict, user_id])
+        for _, p in predict_rows.iterrows():
+            timestamp = p["index"]
+            predict = p["item_id"]
+            holdout.append([timestamp, profile, predict, user_id])
+            # profile.extend(predict)  # If profile grows in evaluation
     # Store holdout in a pandas dataframe
     holdout = pd.DataFrame(
         holdout,

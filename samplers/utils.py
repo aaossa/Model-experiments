@@ -11,7 +11,7 @@ def merge_samples(data):
     output dict. 
 
     Args:
-        data: List of dicts, each from UGalleryDataset.__getitem__,
+        data: List of dicts, each from CustomDataset.__getitem__,
             that contains each triple information.
 
     Returns:

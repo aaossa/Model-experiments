@@ -1,25 +1,37 @@
+import numpy as np
 import pandas as pd
+
+
+def extract_embedding(embedding, verbose=False):
+    features = list()
+    id2index = dict()
+    for i, (_id, vector_embedding) in enumerate(embedding):
+        _id = str(_id)
+        if _id not in id2index:
+            id2index[_id] = len(features)
+            features.append(vector_embedding)
+        elif verbose:
+            print(f"Warning: Duplicated id ({_id})")
+    features = np.asarray(features)
+    return features, id2index
 
 
 def get_interactions_dataframe(interactions_path, display_stats=False):
     # Load interactions from CSV
-    interactions_df = pd.read_csv(
-        interactions_path,
-    )
-    # Rename columns
-    interactions_df = interactions_df.rename(columns={
-        "board_id": "user_id",
-        "im_name": "item_id",
-    })
+    interactions_df = pd.read_csv(interactions_path)
 
+    # Display stats
     if display_stats:
-        for col in interactions_df.columns:
-            print(f"Interactions - {col}: {interactions_df[col].nunique()}")
+        for column in interactions_df.columns:
+            print(f"Interactions - {column}: {interactions_df[column].nunique()} unique values")
 
     return interactions_df
 
 
-def mark_evaluation_rows(interactions_df, threshold=1):
+def mark_evaluation_rows(interactions_df, threshold=None):
+    if threshold is None:
+        threshold = 1
+
     def _mark_evaluation_rows(group):
         # Only the last 'threshold' items are used for evaluation,
         # unless less items are available (then they're used for training)
@@ -29,10 +41,11 @@ def mark_evaluation_rows(interactions_df, threshold=1):
         return evaluation_series
 
     # Mark evaluation rows
-    interactions_df["evaluation"] = interactions_df.groupby(["user_id"])["user_id"].apply(_mark_evaluation_rows)
-    # Sort transactions by old index
-    interactions_df = interactions_df.sort_values("index")
-    # Reset index according to previous order
+    interactions_df["evaluation"] = interactions_df.groupby(
+        ["user_id"])["user_id"].apply(_mark_evaluation_rows)
+    # Sort transactions by timestamp
+    interactions_df = interactions_df.sort_values("timestamp")
+    # Reset index according to new order
     interactions_df = interactions_df.reset_index(drop=True)
     return interactions_df
 
@@ -50,37 +63,23 @@ def get_holdout(interactions_df):
             profile = [item for p in profile for item in p]
         # Keep last interactions for evaluation
         for _, p in predict_rows.iterrows():
-            timestamp = p["index"]
+            timestamp = p["timestamp"]
             predict = p["item_id"]
             holdout.append([timestamp, profile, predict, user_id])
             # profile.extend(predict)  # If profile grows in evaluation
     # Store holdout in a pandas dataframe
     holdout = pd.DataFrame(
         holdout,
-        columns=["index", "profile", "predict", "user_id"],
+        columns=["timestamp", "profile", "predict", "user_id"],
     )
-    holdout = holdout.sort_values(by=["index"])
+    holdout = holdout.sort_values(by=["timestamp"])
     holdout = holdout.reset_index(drop=True)
 
     # Pick interactions not used for evaluation
     new_dataset = interactions_df[~interactions_df["evaluation"]]
     # Sort transactions by timestamp
-    new_dataset = new_dataset.sort_values("index")
+    new_dataset = new_dataset.sort_values("timestamp")
     # Reset index according to new order
     new_dataset = new_dataset.reset_index(drop=True)
 
     return holdout, new_dataset
-
-
-def get_evaluation_dataframe(evaluation_path):
-    # Load evaluation DataFrame from CSV
-    evaluation_df = pd.read_csv(evaluation_path)
-    string_to_list = lambda s: list(map(int, s.strip("[]").split(", ")))
-    # Transform lists from str to int
-    evaluation_df["profile"] = evaluation_df["profile"].apply(
-        lambda s: string_to_list(s) if isinstance(s, str) else s,
-    )
-    evaluation_df["predict"] = evaluation_df["predict"].apply(
-        lambda s: string_to_list(s) if isinstance(s, str) else s,
-    )
-    return evaluation_df

@@ -8,11 +8,13 @@ from .hashing import pre_hash
 
 class StrategyHandler:
 
-    def __init__(self, vissimhandler, hybrid_scorer, clustId2artIndexes,
-                 cluster_by_idx, artistId2artworkIndexes, artist_by_idx,
-                 user_as_items, threshold=0.7, confidence_margin=0.18,
-                 max_profile_size=None
+    def __init__(self, interactions, vissimhandler, hybrid_scorer,
+                 clustId2artIndexes, cluster_by_idx,
+                 artistId2artworkIndexes, artist_by_idx,
+                 user_as_items,
+                 threshold=0.7, confidence_margin=0.18, max_profile_size=None,
                  ):
+        self.interactions = interactions
         self.vissimhandler = vissimhandler
         self.hybrid_scorer = hybrid_scorer
         self.clustId2artIndexes = clustId2artIndexes
@@ -50,10 +52,11 @@ class StrategyHandler:
             if i not in profile_set:
                 return i
 
-    def strategy_1(self, purchases_df, samples_per_user, hashes_container):
+    def strategy_1(self, samples_per_user, hashes_container):
         # Initialization
+        interactions = self.interactions.copy()
         samples = []
-        for ui, group in tqdm(purchases_df.groupby("user_id"), desc="Strategy 1"):
+        for ui, group in tqdm(interactions.groupby("user_id"), desc="Strategy 1"):
             # Get profile artworks
             full_profile = np.hstack(group["item_id"].values).tolist()
             full_profile_set = set(full_profile)
@@ -93,12 +96,12 @@ class StrategyHandler:
                 n -= 1
         return samples
 
-    def strategy_2(self, embedding, samples_per_item, hashes_container):
+    def strategy_2(self, samples_per_item, hashes_container):
         # Initialization
         samples = []
         if not self.user_as_items:
             assert samples_per_item == 0, "Trying to use fake strategy when real users are required"
-        for pi, _id in enumerate(tqdm(embedding[:, 0], desc="Strategy 2")):
+        for pi, _ in enumerate(tqdm(self.artist_by_idx, desc="Strategy 2")):
             profile = (pi,)
             n = samples_per_item
             while n > 0:
@@ -119,10 +122,11 @@ class StrategyHandler:
                 n -= 1
         return samples
 
-    def strategy_3(self, purchases_df, n_samples_per_user, hashes_container):
+    def strategy_3(self, n_samples_per_user, hashes_container):
         # Initialization
+        interactions = self.interactions.copy()
         samples = []
-        for ui, group in tqdm(purchases_df.groupby("user_id"), desc="Strategy 3"):
+        for ui, group in tqdm(interactions.groupby("user_id"), desc="Strategy 3"):
             full_profile = np.hstack(group["item_id"].values).tolist()
             artists_list = self.artist_by_idx[full_profile]
             clusters_list = self.cluster_by_idx[full_profile]
@@ -165,12 +169,12 @@ class StrategyHandler:
                 n -= 1
         return samples
 
-    def strategy_4(self, embedding, samples_per_item, hashes_container):
+    def strategy_4(self, samples_per_item, hashes_container):
         # Initialization
         samples = []
         if not self.user_as_items:
             assert samples_per_item == 0, "Trying to use fake strategy when real users are required"
-        for profile_item, _ in enumerate(tqdm(embedding[:, 0], desc="Strategy 4")):
+        for profile_item, _ in enumerate(tqdm(self.artist_by_idx, desc="Strategy 4")):
             profile = (profile_item,)
             n = samples_per_item
             while n > 0:

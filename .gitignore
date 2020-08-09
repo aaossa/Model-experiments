@@ -9,10 +9,14 @@ runs/
 data/Pinterest/*
 data/UGallery/*
 data/Wikimedia/*
-# ... except their README
+# ... except their README...
 !data/Pinterest/README.md
 !data/UGallery/README.md
 !data/Wikimedia/README.md
+# and the data analysis
+!data/Pinterest/Data\ Analysis\ (Pinterest).ipynb
+!data/UGallery/Data\ Analysis\ (UGallery).ipynb
+!data/Wikimedia/Data\ Analysis\ (Wikimedia).ipynb
 
 
 # Created by https://www.gitignore.io/api/linux,macos,python,windows,jupyternotebooks

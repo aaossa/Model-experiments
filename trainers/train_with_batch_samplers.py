@@ -12,7 +12,7 @@ from models.utils import get_cpu_copy, save_checkpoint
 def train_with_batch_samplers(
     model, device, criterion, optimizer, scheduler, batch_samplers,
     max_epochs=1, max_lrs=float("inf"), train_per_valid_times=1,
-    model_version=None, checkpoint_dir=None, writer_dir=None,
+    model_version=None, checkpoint_dir=None, writer_dir=None, save_last=False,
 ):
     # Initialization
     model = model.to(device)
@@ -206,9 +206,13 @@ def train_with_batch_samplers(
     print(f">> Training completed in {elapsed // 60:.0f}m {elapsed % 60:.0f}s")
     print(f">> Best validation accuracy: ~{100 * best_validation_acc:.3f}%")
 
-    # Copy last model weights
-    print(">> Copy last model")
-    last_model = copy.deepcopy(get_cpu_copy(model))
+    if save_last:
+        # Copy last model weights
+        print(">> Copy last model")
+        last_model_weights = copy.deepcopy(get_cpu_copy(model))
+    else:
+        epoch_acc = None
+        last_model_weights = None
 
     # Load best model weights
     print(">> Load best model")
@@ -224,7 +228,7 @@ def train_with_batch_samplers(
         checkpoint_dst, model=get_cpu_copy(model),
         criterion=criterion, optimizer=optimizer, scheduler=scheduler,
         epoch=scheduler.last_epoch, accuracy=best_validation_acc,
-        last_model=last_model, last_accuracy=epoch_acc,
+        last_model=last_model_weights, last_accuracy=epoch_acc,
     )
 
     return model, checkpoint["accuracy"], checkpoint["epoch"]

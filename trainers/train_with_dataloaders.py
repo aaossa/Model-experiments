@@ -13,7 +13,7 @@ def train_with_dataloaders(
     model, device, criterion, optimizer, scheduler, dataloaders,
     max_epochs=1, max_lrs=float("inf"), train_per_valid_times=1,
     model_version=None, checkpoint_dir=None, writer_dir=None,
-    non_blocking=True,
+    non_blocking=True, save_last=False,
 ):
     # Initialization
     model = model.to(device)
@@ -206,9 +206,13 @@ def train_with_dataloaders(
     print(f">> Training completed in {elapsed // 60:.0f}m {elapsed % 60:.0f}s")
     print(f">> Best validation accuracy: ~{100 * best_validation_acc:.3f}%")
 
-    # Copy last model weights
-    print(">> Copy last model")
-    last_model = copy.deepcopy(get_cpu_copy(model))
+    if save_last:
+        # Copy last model weights
+        print(">> Copy last model")
+        last_model_weights = copy.deepcopy(get_cpu_copy(model))
+    else:
+        epoch_acc = None
+        last_model_weights = None
 
     # Load best model weights
     print(">> Load best model")
@@ -224,7 +228,7 @@ def train_with_dataloaders(
         checkpoint_dst, model=get_cpu_copy(model),
         criterion=criterion, optimizer=optimizer, scheduler=scheduler,
         epoch=scheduler.last_epoch, accuracy=best_validation_acc,
-        last_model=last_model, last_accuracy=epoch_acc,
+        last_model=last_model_weights, last_accuracy=epoch_acc,
     )
 
     return model, checkpoint["accuracy"], checkpoint["epoch"]

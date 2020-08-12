@@ -6,7 +6,7 @@ import torch
 from torch.utils.tensorboard import SummaryWriter
 from tqdm.notebook import tqdm
 
-from models.utils import save_checkpoint
+from models.utils import get_cpu_copy, save_checkpoint
 
 
 def train_with_batch_samplers(
@@ -153,7 +153,7 @@ def train_with_batch_samplers(
                     best_validation_acc = epoch_acc
                     best_validation_loss = epoch_loss
                     save_checkpoint(
-                        checkpoint_dst, model=model,
+                        checkpoint_dst, model=get_cpu_copy(model),
                         criterion=criterion, optimizer=optimizer, scheduler=scheduler,
                         epoch=scheduler.last_epoch, accuracy=best_validation_acc,
                     )
@@ -208,20 +208,23 @@ def train_with_batch_samplers(
 
     # Copy last model weights
     print(">> Copy last model")
-    last_model = copy.deepcopy(model)
+    last_model = copy.deepcopy(get_cpu_copy(model))
 
-    # Load best modelweights
+    # Load best model weights
     print(">> Load best model")
-    checkpoint = torch.load(checkpoint_dst)
+    checkpoint = torch.load(checkpoint_dst, map_location=torch.device("cpu"))
     model.load_state_dict(checkpoint["model"])
+
+    # Move model back to device
+    model.to(device)
 
     # Save last state
     print(">> Save last state")
     save_checkpoint(
-        checkpoint_dst, model=model,
+        checkpoint_dst, model=get_cpu_copy(model),
         criterion=criterion, optimizer=optimizer, scheduler=scheduler,
         epoch=scheduler.last_epoch, accuracy=best_validation_acc,
         last_model=last_model, last_accuracy=epoch_acc,
     )
 
-    return model, checkpoint["accuracy"], checkpoint["epoch"], last_model
+    return model, checkpoint["accuracy"], checkpoint["epoch"]

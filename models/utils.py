@@ -1,5 +1,14 @@
+from collections import OrderedDict
+
 import torch
 import torchvision.models as models
+
+
+def get_cpu_copy(model):
+    return OrderedDict({
+        k: v.to("cpu")
+        for k, v in model.state_dict().items()
+    })
 
 
 def get_model_by_name(model_name, pretrained=True):

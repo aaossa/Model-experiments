@@ -51,6 +51,7 @@ def train_with_batch_samplers(
 
     # Training loop setup
     best_validation_acc = 0.0
+    best_validation_loss = float("inf")
     used_lrs = [optimizer.param_groups[0]["lr"]]
 
     # Progress bars

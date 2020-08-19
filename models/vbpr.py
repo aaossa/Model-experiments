@@ -71,6 +71,7 @@ class VBPR(nn.Module):
 
         return x_uij.unsqueeze(-1)
 
+
     def recommend(self, user, items=None, grad_enabled=False):
         """Generate recommendatiosn for a given usr.
 
@@ -127,3 +128,6 @@ class VBPR(nn.Module):
         # Biases (beta)
         nn.init.xavier_uniform_(self.beta_items.weight)
         nn.init.xavier_uniform_(self.visual_bias.weight)
+
+    def generate_items_cache(self, grad_enabled=False):
+        raise NotImplementedError("Check CuratorNet implementation for reference")

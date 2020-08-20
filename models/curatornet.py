@@ -73,7 +73,7 @@ class CuratorNet(nn.Module):
 
         return x_ui - x_uj
 
-    def recommend(self, profile, items=None, grad_enabled=False):
+    def recommend(self, profile, items=None, items_cache=None, grad_enabled=False):
         """Generate recommendatiosn for a given profile.
 
         Feed forward a given profile and predict scores for each
@@ -88,13 +88,25 @@ class CuratorNet(nn.Module):
         Returns:
             Scores for each item for the given profile.
         """
+        if items_cache is not None and items is not None:
+            raise ValueError(
+                "Value for 'items_cache' can be provided only if 'items' is None"
+            )
         with torch.set_grad_enabled(grad_enabled):
             # Load embedding data
             profile = self.embedding(profile)
-            if items is None:
-                items = self.embedding.weight.unsqueeze(0)
+
+            # Items
+            if items_cache is not None:
+                items = items_cache
             else:
-                items = self.embedding(items)
+                if items is None:
+                    items = self.embedding.weight.unsqueeze(0)
+                else:
+                    items = self.embedding(items)
+                items = F.selu(self.selu_common1(items))
+                items = F.selu(self.selu_common2(items))
+                items = items.transpose(-1, -2)
 
             # User profile
             profile = F.selu(self.selu_common1(profile))
@@ -106,12 +118,8 @@ class CuratorNet(nn.Module):
             profile = F.selu(self.selu_pu2(profile))
             profile = F.selu(self.selu_pu3(profile))
 
-            # Items
-            items = F.selu(self.selu_common1(items))
-            items = F.selu(self.selu_common2(items))
-
             # x_ui
-            x_ui = torch.bmm(profile, items.transpose(-1, -2)).squeeze()
+            x_ui = torch.bmm(profile, items).squeeze()
 
             return x_ui
 
@@ -127,3 +135,12 @@ class CuratorNet(nn.Module):
         nn.init.xavier_uniform_(self.selu_pu1.weight)
         nn.init.xavier_uniform_(self.selu_pu2.weight)
         nn.init.xavier_uniform_(self.selu_pu3.weight)
+
+    def generate_items_cache(self, grad_enabled=False):
+        with torch.set_grad_enabled(grad_enabled):
+            # Items
+            items = self.embedding.weight.unsqueeze(0)
+            items = F.selu(self.selu_common1(items))
+            items = F.selu(self.selu_common2(items))
+            items = items.transpose(-1, -2)
+        return items

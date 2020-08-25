@@ -28,7 +28,7 @@ class PreprocessingDataset(Dataset):
             idx = idx.tolist()
 
         img_name = self.images_paths[idx]
-        img_fn = Path(img_name).stem
+        img_fn = Path(img_name).name
         img = Image.open(img_name).convert("RGB")
 
         if self.transform:

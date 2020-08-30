@@ -62,8 +62,8 @@ def auc_exact(ground_truth_indexes, inventory_size):
     return auc
 
 
-# def reciprocal_rank(first_relevant_index):
-#     return 1 / (first_relevant_index + 1)
+def reciprocal_rank(ground_truth_indexes):
+    return 1 / (ground_truth_indexes.min().to(float) + 1)
 
 
 # def jaccard_index(set1, set2):

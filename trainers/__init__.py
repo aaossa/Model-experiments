@@ -1,2 +1,1 @@
-from .train_with_batch_samplers import train_with_batch_samplers
-from .train_with_dataloaders import train_with_dataloaders
+from .trainer import Trainer

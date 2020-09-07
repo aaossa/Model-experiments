@@ -73,40 +73,45 @@ class CuratorNet(nn.Module):
 
         return x_ui - x_uj
 
-    def recommend(self, profile, items=None, items_cache=None, grad_enabled=False):
-        """Generate recommendatiosn for a given profile.
-
-        Feed forward a given profile and predict scores for each
-        item.
-
-        Args:
-            profile: User profile items embeddings, as a Tensor.
-            items: Items available for recommendation, as a Tensor.
-            grad_enabled: Optional. If True, gradient will be enable.
-                Defaults to False.
-
-        Returns:
-            Scores for each item for the given profile.
-        """
-        if items_cache is not None and items is not None:
-            raise ValueError(
-                "Value for 'items_cache' can be provided only if 'items' is None"
-            )
+    def recommend_all(self, profile, cache=None, grad_enabled=False):
         with torch.set_grad_enabled(grad_enabled):
             # Load embedding data
             profile = self.embedding(profile)
 
             # Items
-            if items_cache is not None:
-                items = items_cache
+            if cache is not None:
+                items = cache[0]
             else:
-                if items is None:
-                    items = self.embedding.weight.unsqueeze(0)
-                else:
-                    items = self.embedding(items)
+                items = self.embedding.weight.unsqueeze(0)
                 items = F.selu(self.selu_common1(items))
                 items = F.selu(self.selu_common2(items))
                 items = items.transpose(-1, -2)
+
+            # User profile
+            profile = F.selu(self.selu_common1(profile))
+            profile = F.selu(self.selu_common2(profile))
+            profile = torch.cat(
+                (self.maxpool(profile), self.avgpool(profile)), dim=-1
+            )
+            profile = F.selu(self.selu_pu1(profile))
+            profile = F.selu(self.selu_pu2(profile))
+            profile = F.selu(self.selu_pu3(profile))
+
+            # x_ui
+            x_ui = torch.bmm(profile, items).squeeze()
+
+            return x_ui
+
+    def recommend(self, profile, items=None, grad_enabled=False):
+        with torch.set_grad_enabled(grad_enabled):
+            # Load embedding data
+            profile = self.embedding(profile)
+
+            # Items
+            items = self.embedding(items)
+            items = F.selu(self.selu_common1(items))
+            items = F.selu(self.selu_common2(items))
+            items = items.transpose(-1, -2)
 
             # User profile
             profile = F.selu(self.selu_common1(profile))
@@ -136,11 +141,11 @@ class CuratorNet(nn.Module):
         nn.init.xavier_uniform_(self.selu_pu2.weight)
         nn.init.xavier_uniform_(self.selu_pu3.weight)
 
-    def generate_items_cache(self, grad_enabled=False):
+    def generate_cache(self, grad_enabled=False):
         with torch.set_grad_enabled(grad_enabled):
             # Items
             items = self.embedding.weight.unsqueeze(0)
             items = F.selu(self.selu_common1(items))
             items = F.selu(self.selu_common2(items))
             items = items.transpose(-1, -2)
-        return items
+        return (items,)

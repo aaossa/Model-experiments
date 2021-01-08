@@ -52,6 +52,12 @@ class StrategyHandler:
             if i not in profile_set:
                 return i
 
+    def __sample_artwork_index_naive(self, profile_set):
+        while True:
+            ni = random.randint(0, len(self.cluster_by_idx) - 1)
+            if ni not in profile_set:
+                return ni
+
     def strategy_1(self, samples_per_user, hashes_container):
         # Initialization
         interactions = self.interactions.copy()
@@ -209,5 +215,39 @@ class StrategyHandler:
                     continue
                 # If not seen, store sample
                 samples.append((*triple, -1))
+                n -= 1
+        return samples
+
+    def naive_strategy_1(self, samples_per_user, hashes_container):
+        # Initialization
+        interactions = self.interactions.copy()
+        samples = []
+        for ui, group in tqdm(interactions.groupby("user_id"), desc="Naive strategy 1"):
+            # Get profile artworks
+            full_profile = np.hstack(group["item_id"].values).tolist()
+            full_profile_set = set(full_profile)
+            n = samples_per_user
+            while n > 0:
+                # Sample positive and negative items
+                pi_index = random.randrange(len(full_profile))
+                pi = full_profile[pi_index]
+                # Get profile
+                if self.max_profile_size:
+                    # "pi_index + 1" to include pi in profile
+                    profile = full_profile[max(0, pi_index - self.max_profile_size + 1):pi_index + 1]
+                else:
+                    profile = list(full_profile)
+                # (While loop is in the sampling method)
+                ni = self.__sample_artwork_index_naive(full_profile_set)
+
+                # If conditions are met, hash and enroll triple
+                if self.user_as_items:
+                    triple = (profile, pi, ni)
+                else:
+                    triple = (ui, pi, ni)
+                if not hashes_container.enroll(pre_hash(triple, contains_iter=self.user_as_items)):
+                    continue
+                # If not seen, store sample
+                samples.append((profile, pi, ni, ui))
                 n -= 1
         return samples

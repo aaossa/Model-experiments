@@ -73,6 +73,7 @@ class Trainer:
         )
 
         # Starting values
+        best_epoch = None
         best_validation_acc = 0.0
         best_validation_loss = float("inf")
         used_lrs = [self.optimizer.param_groups[0]["lr"]]
@@ -182,6 +183,7 @@ class Trainer:
                         new_optimal = epoch_loss < best_validation_loss
                     if new_optimal:
                         # Save best model
+                        best_epoch = scheduler.last_epoch
                         best_validation_acc = epoch_acc
                         best_validation_loss = epoch_loss
                         save_checkpoint(
@@ -213,7 +215,7 @@ class Trainer:
                     pbar_valid.set_postfix({
                         "best_acc": f"{100 * best_validation_acc:.3f}",
                         "best_loss": f"{best_validation_loss:.6f}",
-                        "best_epoch": f"{epoch}",
+                        "best_epoch": f"{best_epoch}",
                         "bad_epochs": f"{self.scheduler.num_bad_epochs}",
                     })
 

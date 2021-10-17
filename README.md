@@ -59,8 +59,8 @@ First of all, make sure that every user in the test set is present in the traini
 
 Additional resources related to this work:
 
-* [Code: aaossa/NetDissect-experiments](https://github.com/aaossa/NetDissect-experiments): This repository
-* [Code: aaossa/Model-experiments](https://github.com/aaossa/Model-experiments): Experiments related to visual recommenders in PyTorch
+* [Code: aaossa/NetDissect-experiments](https://github.com/aaossa/NetDissect-experiments):  Experiments related to using NetDissect as a local explanator
+* [Code: aaossa/Model-experiments](https://github.com/aaossa/Model-experiments): This repository
 * [Code: aaossa/Concept-experiments](https://github.com/aaossa/Concept-experiments): Experiments related to creating a recommendation and explanation interface
 
 More resources:
